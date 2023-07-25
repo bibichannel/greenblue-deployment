@@ -1,9 +1,6 @@
 version: '3'
 services:
     backend:
-      build:
-        context: .
-        dockerfile: Dockerfile.dev
       image: backend-dev:v1
       restart: unless-stopped
       tty: true
