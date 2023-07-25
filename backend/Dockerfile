@@ -6,6 +6,8 @@ ARG PORT=4000
 
 ENV NODE_ENV=${STAGE}
 
+WORKDIR /app
+
 COPY . /app
 
 RUN chmod +x entrypoint.sh

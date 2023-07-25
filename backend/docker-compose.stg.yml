@@ -1,10 +1,7 @@
 version: '3'
 services:
     backend:
-      build:
-        context: .
-        dockerfile: Dockerfile.stg
-      image: backend-stg:v1
+      image: backend-stg:latest
       restart: unless-stopped
       tty: true
       networks:

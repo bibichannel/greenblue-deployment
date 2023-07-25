@@ -1,7 +1,7 @@
 version: '3'
 services:
     backend:
-      image: backend-dev:v1
+      image: backend-dev:latest
       restart: unless-stopped
       tty: true
       networks:
