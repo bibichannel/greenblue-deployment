@@ -1,0 +1,11 @@
+FROM python:3.12.0b4-slim-bullseye
+
+ENV NODE_ENV="development"
+
+COPY . /app
+
+RUN chmod +x entrypoint.sh
+
+EXPOSE 4000
+
+CMD ["/bin/sh", "-c", "./entrypoint.sh"]
