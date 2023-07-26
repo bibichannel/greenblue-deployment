@@ -10,6 +10,8 @@ import requests
 WEBHOOK_TOKEN_DISCORD = "https://discord.com/api/webhooks/1105406685490708531/QWSmNARZVGSDosEGcsZE_9qUe89802tRQnv9YBaEymwSUdm5aqUmXhXCnumZhV3F3-lu?thread_id=1105797029017428029"
 DEFAULT_COLOR="blue"
 DICT_PORT_BACKEND = {"development":"4000", "staging":"3000"}
+GATEWAY_DOCKER_COMPOSE_FILE_PATH=r"/home/ubuntu/trung.lykhanh/devops/gateway/docker-compose.gateway.yml"
+
 ######################################################################
 ### processing parser for command-line options, 
 ### arguments and sub-commands
@@ -17,15 +19,41 @@ DICT_PORT_BACKEND = {"development":"4000", "staging":"3000"}
 
 def msg(name=None):
     return ''' 
-    -------------------------------------
-    WEB GATEWAY INTERACT OPTIONS
+    ####################################
+    ### WEB GATEWAY INTERACT OPTIONS ###
+    ####################################
+
     devops-excute \\
-    --[enable/stop/disable]-gateway \\
-    --file-yml=[docker-compose.yml file]
+    --[enable/stop/restart/disable]-gateway
 
-    devops-excute --restart-gateway
+    #####################################
+    ### MODIFY NGINX.CONF FILE TO     ###
+    ### PASS TRAFFIC TO NEW CONTAINER ###
+    #####################################
 
-    DEPLOY BACKEND
+    devops-excute \\
+    --modify \\
+    --side=backend \\
+    --file-conf=[nginx.conf file] \\
+    --enviroment=[development/staging]
+
+    #########################
+    ### PUSH NOTIFICATION ###
+    ### TO DISCORD SERVER ###
+    #########################
+
+    devops-excute --notification --more-data=[STRING]
+
+    ##############################
+    ### REMOVE UNTAGGED IMAGES ###
+    ##############################
+
+    devops-excute --remove
+
+    #######################
+    ### DEPLOY BACK-END ###
+    #######################
+    
     devops-excute \\
     --deploy \\
     --side=backend \\
@@ -37,28 +65,18 @@ def msg(name=None):
     --notification \\                           [Optional for deploy]
     --more-data=[STRING]                       [Optional for deploy]
 
-    DEPLOY FRONTEND
+    ########################
+    ### DEPLOY FRONT-END ###
+    ########################
+
     devops-excute \\
     --deploy \\
     --side=frontend \\
     --file-yml=[docker-compose.yml file] \\
     --enviroment=[development/staging] \\
+    --restart-gateway \\                        [Don't enable for first deploy]
     --notification \\                           [Optional for deploy]
     --more-data=[STRING]                       [Optional for deploy]
-
-    MODIFY NGINX.CONF FILE TO PASS TRAFFIC TO NEW CONTAINER
-    devops-excute \\
-    --modify \\
-    --side=backend \\
-    --file-conf=[nginx.conf file] \\
-    --enviroment=[development/staging]
-
-    PUSH NOTIFICATION TO DISCORD SERVER 
-    (Only use for case deploy backend/frontend)
-    devops-excute --notification --more-data=[STRING]
-
-    REMOVE UNTAGGED IMAGES
-    devops-excute --remove
 
     -------------------------------------
     '''
@@ -97,8 +115,6 @@ def remove_untagged_images():
     images = client.images.prune(filters={"dangling": True})
     for image in images:
         print("Deleted: ", image)
-        # if not image.tags:
-        #     client.images.remove(image=image.id, force=True)
 
 def search_containers_follow_side_running(side: str, environment: str):
     for container in client.containers.list(filters={"status":"running"}):
@@ -131,27 +147,23 @@ def check_container(name_container: str):
 ### processing docker-compose
 ######################################################################
 
-def enable_gateway(path_file: str):
-    command = f'docker-compose --file={path_file} --project-name=gateway up -d --build'
+def enable_gateway():
+    command = f'docker-compose --file={GATEWAY_DOCKER_COMPOSE_FILE_PATH} --project-name=gateway up -d --build'
     result = subprocess.run(command, shell=True, capture_output=True, text=True)
     return True if result.returncode == 0 else print(result.stderr); return False
     
-def stop_gateway(path_file: str):
-    command = f'docker-compose --file={path_file} --project-name=gateway stop'
+def stop_gateway():
+    command = f'docker-compose --file={GATEWAY_DOCKER_COMPOSE_FILE_PATH} --project-name=gateway stop'
     result = subprocess.run(command, shell=True, capture_output=True, text=True)
     return True if result.returncode == 0 else print(result.stderr); return False
 
 def restart_gateway():
-    name_gateway = search_containers_follow_subname(sub_name_containers="gateway")
-    if name_gateway:
-        command = f'docker exec -it {name_gateway} sh -c "nginx -s reload"'
-        results = subprocess.run(command, shell=True, capture_output=True, text=True)
-        return True if results.returncode == 0 else print(results.stderr); return False
-    print("Don't search name gateway container") 
-    return False
+    command = f'docker-compose --file={GATEWAY_DOCKER_COMPOSE_FILE_PATH} --project-name=gateway restart'
+    results = subprocess.run(command, shell=True, capture_output=True, text=True)
+    return True if results.returncode == 0 else print(f"{results.returncode} + {results.stderr}"); return False
         
-def disable_gateway(path_file: str):
-    command = f'docker-compose --file={path_file} --project-name=gateway down'
+def disable_gateway():
+    command = f'docker-compose --file={GATEWAY_DOCKER_COMPOSE_FILE_PATH} --project-name=gateway down'
     result = subprocess.run( command, shell=True, capture_output=True,  text=True)
     return True if result.returncode == 0 else print(result.stderr); return False
 
@@ -232,15 +244,15 @@ if __name__ == "__main__":
         print(f"Change 02 current-{current_color} | future-{shift_color}")
     
     if args.enable_gateway:
-        if enable_gateway(args.file_yml):
+        if enable_gateway():
             print("Enable web gateway successfuly")
     
     if args.stop_gateway:
-        if stop_gateway(args.file_yml):
+        if stop_gateway():
             print("Stop web gateway successfuly")
 
     if args.disable_gateway:
-        if disable_gateway(args.file_yml):
+        if disable_gateway():
             print("Disables web gateway successfuly")
 
     if args.remove:

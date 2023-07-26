@@ -2,7 +2,7 @@ version: '3'
 
 services:
   frontend:
-    image: frontend-dev:latest
+    image: fronend-dev:latest
     networks:
       - frontend_network
     extra_hosts:

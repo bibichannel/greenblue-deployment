@@ -7,6 +7,7 @@ services:
       - "80:80"
     networks:
       - loadbalancer_network
+    tty: true
     restart: unless-stopped
     volumes:
       - ./nginx.gateway.conf:/etc/nginx/conf.d/default.conf
